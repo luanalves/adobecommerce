@@ -1,0 +1,16 @@
+<?php
+/**
+ * Header link template for cross-domain authentication
+ *
+ * @var \TheDevKitchen\JwtCrossDomainAuth\Block\Link $block
+ */
+
+// Only display the link if the customer is logged in
+if ($block->isCustomerLoggedIn()):
+?>
+<li class="link authorization-link">
+    <a id="cross-domain-switch" href="#">
+        <?= $block->escapeHtml(__('Switch Store')) ?>
+    </a>
+</li>
+<?php endif; ?>

@@ -14,5 +14,12 @@
                    name="cross-domain-loader-css"
                    template="TheDevKitchen_JwtCrossDomainAuth::loader/styles.phtml" />
         </referenceContainer>
+        
+        <!-- Explicitly load our JavaScript -->
+        <referenceContainer name="before.body.end">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="jwt_crossdomain_js"
+                   template="TheDevKitchen_JwtCrossDomainAuth::js-init.phtml" />
+        </referenceContainer>
     </body>
 </page>

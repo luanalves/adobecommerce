@@ -5,9 +5,12 @@ define([
     'use strict';
     
     return function (config) {
-        $(document).ready(function () {
+        // Initialize on document ready
+        $(function () {
+            // Find and attach click handler to the cross-domain switch link
             $('#cross-domain-switch').on('click', function (e) {
                 e.preventDefault();
+                console.log('Cross-domain link clicked!');
                 
                 // Show loader
                 $('body').loader('show');
@@ -18,6 +21,7 @@ define([
                     type: 'GET',
                     dataType: 'json',
                     success: function (response) {
+                        console.log('Token received:', response);
                         // Redirect to the crossdomain login endpoint with the token
                         if (response.token) {
                             window.location.href = config.crossDomainUrl + '?token=' + response.token;

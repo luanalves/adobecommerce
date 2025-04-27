@@ -16,14 +16,6 @@
                     <comment>Enter the target domain URL for cross-domain authentication (e.g., https://second-store.com)</comment>
                 </field>
             </group>
-            <group id="security" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Security Settings</label>
-                <field id="jwt_secret" translate="label" type="obscure" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>JWT Secret Key</label>
-                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
-                    <comment>This secret key is used to sign JWT tokens. Keep this secret and make sure it is the same on all connected domains.</comment>
-                </field>
-            </group>
         </section>
     </system>
 </config>

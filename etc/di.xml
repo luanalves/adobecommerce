@@ -21,4 +21,11 @@
             <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
         </arguments>
     </type>
+    
+    <!-- Configure Login controller to use the same JWT manager -->
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Crossdomain\Login">
+        <arguments>
+            <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
+        </arguments>
+    </type>
 </config>

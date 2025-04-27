@@ -1,19 +1,16 @@
 <?xml version="1.0"?>
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="TheDevKitchen_JwtCrossDomainAuth::css/loader.css" />
+        <css src="TheDevKitchen_JwtCrossDomainAuth::css/switcher.css" />
+    </head>
     <body>
-        <!-- Add the website switcher to the header -->
-        <referenceBlock name="header">
+        <!-- Add the website switcher to the header panel (where store/language switchers are) -->
+        <referenceContainer name="header.panel">
             <block class="TheDevKitchen\JwtCrossDomainAuth\Block\Switcher" 
                    name="crossdomain-website-switcher"
                    template="TheDevKitchen_JwtCrossDomainAuth::switch/crossdomain.phtml" 
-                   after="-" />
-        </referenceBlock>
-        
-        <!-- Add custom styles for the switcher -->
-        <referenceContainer name="head.additional">
-            <block class="Magento\Framework\View\Element\Template" 
-                   name="crossdomain-switcher-css"
-                   template="TheDevKitchen_JwtCrossDomainAuth::switch/styles.phtml" />
+                   after="store_language" />
         </referenceContainer>
         
         <!-- Add JS for handling cross-domain authentication -->

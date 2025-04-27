@@ -8,8 +8,9 @@
 <script type="text/x-magento-init">
 {
     ".cross-domain-link": {
-        "TheDevKitchen_JwtCrossDomainAuth/js/crossdomain": {
-            "tokenUrl": "<?= $block->getUrl('crossdomain/token') ?>"
+        "crossDomainSwitch": {
+            "tokenUrl": "<?= $block->getUrl('crossdomain/token/index') ?>",
+            "crossDomainUrl": "<?= $block->getUrl('crossdomain/login') ?>"
         }
     }
 }

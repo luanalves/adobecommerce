@@ -1,4 +1,24 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <!-- Add dependency injection configurations here -->
+    <!-- JWT Configuration for cross-domain authentication -->
+    <virtualType name="TheDevKitchenJwtCrossDomainContentCreator" type="Magento\Framework\Jwt\JwtManager">
+        <arguments>
+            <argument name="jwtConfigPool" xsi:type="array">
+                <item name="jwt-cross-domain" xsi:type="object">TheDevKitchenJwtCrossDomainConfig</item>
+            </argument>
+            <argument name="defaultJwtConfigId" xsi:type="string">jwt-cross-domain</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="TheDevKitchenJwtCrossDomainConfig" type="Magento\Framework\Jwt\EncryptionSettingsInterface">
+        <arguments>
+            <argument name="encryptionMethod" xsi:type="string">RS256</argument>
+        </arguments>
+    </virtualType>
+    
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Crossdomain\GenerateToken">
+        <arguments>
+            <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
+        </arguments>
+    </type>
 </config>

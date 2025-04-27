@@ -1,25 +1,26 @@
 <?xml version="1.0"?>
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
-        <referenceBlock name="header.links">
-            <block class="TheDevKitchen\JwtCrossDomainAuth\Block\Link" 
-                   name="cross-domain-link"
-                   template="TheDevKitchen_JwtCrossDomainAuth::header/link.phtml" 
+        <!-- Add the website switcher to the header -->
+        <referenceBlock name="header">
+            <block class="TheDevKitchen\JwtCrossDomainAuth\Block\Switcher" 
+                   name="crossdomain-website-switcher"
+                   template="TheDevKitchen_JwtCrossDomainAuth::switch/crossdomain.phtml" 
                    after="-" />
         </referenceBlock>
         
-        <!-- Add the loader widget styling -->
+        <!-- Add custom styles for the switcher -->
         <referenceContainer name="head.additional">
             <block class="Magento\Framework\View\Element\Template" 
-                   name="cross-domain-loader-css"
-                   template="TheDevKitchen_JwtCrossDomainAuth::loader/styles.phtml" />
+                   name="crossdomain-switcher-css"
+                   template="TheDevKitchen_JwtCrossDomainAuth::switch/styles.phtml" />
         </referenceContainer>
         
-        <!-- Explicitly load our JavaScript -->
+        <!-- Add JS for handling cross-domain authentication -->
         <referenceContainer name="before.body.end">
-            <block class="Magento\Framework\View\Element\Template"
-                   name="jwt_crossdomain_js"
-                   template="TheDevKitchen_JwtCrossDomainAuth::js-init.phtml" />
+            <block class="TheDevKitchen\JwtCrossDomainAuth\Block\Switcher"
+                   name="crossdomain-switcher-js"
+                   template="TheDevKitchen_JwtCrossDomainAuth::switch/js.phtml" />
         </referenceContainer>
     </body>
 </page>

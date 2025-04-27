@@ -1,0 +1,16 @@
+<?php
+/**
+ * JavaScript initialization for cross-domain website switcher
+ *
+ * @var \TheDevKitchen\JwtCrossDomainAuth\Block\Switcher $block
+ */
+?>
+<script type="text/x-magento-init">
+{
+    ".cross-domain-link": {
+        "TheDevKitchen_JwtCrossDomainAuth/js/crossdomain": {
+            "tokenUrl": "<?= $block->getUrl('crossdomain/token') ?>"
+        }
+    }
+}
+</script>

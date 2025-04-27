@@ -61,23 +61,6 @@ class Config
     }
 
     /**
-     * Get JWT secret key
-     * 
-     * Used for HMAC encryption algorithms
-     *
-     * @param int|string|null $storeId
-     * @return string
-     */
-    public function getJwtSecret($storeId = null): string
-    {
-        return (string)$this->scopeConfig->getValue(
-            self::XML_PATH_JWT_SECRET,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
-    }
-
-    /**
      * Get token expiration time in seconds
      *
      * @param int|string|null $storeId
@@ -90,7 +73,7 @@ class Config
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
-        
+
         return (int)$value ?: 300; // Default to 5 minutes (300 seconds)
     }
 }

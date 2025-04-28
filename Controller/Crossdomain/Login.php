@@ -122,7 +122,9 @@ class Login implements HttpGetActionInterface
 
             // Validate JWT token
             try {
-                $payload = $this->jwtManager->parse($token);
+                // Using read() instead of parse() and providing empty acceptable encryption array
+                // This will validate the token without specific encryption settings
+                $payload = $this->jwtManager->read($token, []);
             } catch (\Exception $e) {
                 $this->logger->warning('JWT parsing failed: ' . $e->getMessage());
                 throw new LocalizedException(__('Invalid authentication token.'));
@@ -181,7 +183,117 @@ class Login implements HttpGetActionInterface
      */
     private function extractClaims($payload): array
     {
-        // If it's a Claims Payload Interface (standard Magento JWT implementation)
+        $this->logger->debug('Extracting claims from payload of type: ' . (is_object($payload) ? get_class($payload) : gettype($payload)));
+
+        // Handle Magento\Framework\Jwt\Jws\Jws directly
+        if ($payload instanceof \Magento\Framework\Jwt\Jws\Jws) {
+            try {
+                // For Jws class, try to access the claims through the header and payload methods
+                if (method_exists($payload, 'getHeader') && method_exists($payload, 'getPayload')) {
+                    $this->logger->debug('Using getHeader/getPayload methods for Jws');
+                    $jwtPayload = $payload->getPayload();
+
+                    // If payload is a string, try to decode it
+                    if (is_string($jwtPayload)) {
+                        $decoded = json_decode($jwtPayload, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            return $decoded;
+                        }
+                    }
+
+                    // If payload is already an array
+                    if (is_array($jwtPayload)) {
+                        return $jwtPayload;
+                    }
+
+                    // If payload is an object with getClaims method
+                    if (is_object($jwtPayload) && method_exists($jwtPayload, 'getClaims')) {
+                        $claimsArray = [];
+                        foreach ($jwtPayload->getClaims() as $claim) {
+                            $claimsArray[$claim->getName()] = $claim->getValue();
+                        }
+                        return $claimsArray;
+                    }
+                }
+
+                // Try using reflection to access protected properties
+                $reflectionClass = new \ReflectionClass($payload);
+                foreach (['payload', 'claims', 'data'] as $propertyName) {
+                    if ($reflectionClass->hasProperty($propertyName)) {
+                        $property = $reflectionClass->getProperty($propertyName);
+                        $property->setAccessible(true);
+                        $value = $property->getValue($payload);
+
+                        if (is_array($value)) {
+                            return $value;
+                        } elseif (is_string($value)) {
+                            $decoded = json_decode($value, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                return $decoded;
+                            }
+                        } elseif (is_object($value) && method_exists($value, 'getClaims')) {
+                            $claimsArray = [];
+                            foreach ($value->getClaims() as $claim) {
+                                $claimsArray[$claim->getName()] = $claim->getValue();
+                            }
+                            return $claimsArray;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->logger->warning('Error accessing Jws properties: ' . $e->getMessage());
+            }
+        }
+
+        // If it's a JwtInterface
+        if ($payload instanceof \Magento\Framework\Jwt\JwtInterface) {
+            try {
+                // Try accessing the content through various methods
+                if (method_exists($payload, 'getContent')) {
+                    $jwtContent = $payload->getContent();
+                    $this->logger->debug('JWT content type: ' . (is_object($jwtContent) ? get_class($jwtContent) : gettype($jwtContent)));
+
+                    // Handle different payload types
+                    if ($jwtContent instanceof \Magento\Framework\Jwt\Payload\ClaimsPayloadInterface) {
+                        $claimsArray = [];
+                        foreach ($jwtContent->getClaims() as $claim) {
+                            $claimsArray[$claim->getName()] = $claim->getValue();
+                        }
+                        return $claimsArray;
+                    } elseif (is_string($jwtContent)) {
+                        $decodedContent = json_decode($jwtContent, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decodedContent)) {
+                            return $decodedContent;
+                        }
+                    } elseif (is_array($jwtContent)) {
+                        return $jwtContent;
+                    }
+                }
+
+                // Try to get protected properties via reflection
+                $reflectionClass = new \ReflectionClass($payload);
+                foreach (['content', 'claims', 'payload'] as $propertyName) {
+                    if ($reflectionClass->hasProperty($propertyName)) {
+                        $property = $reflectionClass->getProperty($propertyName);
+                        $property->setAccessible(true);
+                        $value = $property->getValue($payload);
+
+                        if (is_array($value)) {
+                            return $value;
+                        } elseif (is_string($value)) {
+                            $decoded = json_decode($value, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->logger->warning('Error accessing JwtInterface properties: ' . $e->getMessage());
+            }
+        }
+
+        // If it's a Claims Payload Interface directly
         if (interface_exists('\Magento\Framework\Jwt\Payload\ClaimsPayloadInterface') &&
             $payload instanceof \Magento\Framework\Jwt\Payload\ClaimsPayloadInterface) {
 
@@ -205,7 +317,57 @@ class Login implements HttpGetActionInterface
             return $payload;
         }
 
-        $this->logger->error('Unknown JWT payload format', ['type' => get_class($payload)]);
+        // Last attempt - try to get data through reflection for any other object type
+        if (is_object($payload)) {
+            $this->logger->debug('Attempting to extract claims via reflection from: ' . get_class($payload));
+            try {
+                $reflectionObject = new \ReflectionObject($payload);
+
+                // Try to find claims or content properties/methods
+                foreach (['claims', 'content', 'payload', 'data'] as $possibleProperty) {
+                    // Check for property
+                    if ($reflectionObject->hasProperty($possibleProperty)) {
+                        $property = $reflectionObject->getProperty($possibleProperty);
+                        $property->setAccessible(true);
+                        $value = $property->getValue($payload);
+
+                        if (is_array($value)) {
+                            return $value;
+                        } elseif (is_string($value)) {
+                            $decoded = json_decode($value, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+
+                    // Check for getter method
+                    $getterMethod = 'get' . ucfirst($possibleProperty);
+                    if ($reflectionObject->hasMethod($getterMethod)) {
+                        $method = $reflectionObject->getMethod($getterMethod);
+                        $method->setAccessible(true);
+                        $value = $method->invoke($payload);
+
+                        if (is_array($value)) {
+                            return $value;
+                        } elseif (is_string($value)) {
+                            $decoded = json_decode($value, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->logger->warning('Reflection attempt failed: ' . $e->getMessage());
+            }
+        }
+
+        // If we get here, we couldn't extract claims
+        $this->logger->error('Unknown JWT payload format', [
+            'type' => is_object($payload) ? get_class($payload) : gettype($payload),
+            'payload' => is_scalar($payload) ? $payload : 'non-scalar'
+        ]);
         throw new LocalizedException(__('Unable to process authentication token.'));
     }
 

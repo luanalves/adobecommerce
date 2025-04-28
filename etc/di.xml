@@ -28,4 +28,42 @@
             <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
         </arguments>
     </type>
+    
+    <!-- Token Service implementation -->
+    <preference for="TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface" 
+                type="TheDevKitchen\JwtCrossDomainAuth\Service\TokenService" />
+    
+    <!-- Token service dependencies -->
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Service\TokenService">
+        <arguments>
+            <argument name="generator" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Model\Token\Generator</argument>
+            <argument name="validator" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Model\Token\Validator</argument>
+        </arguments>
+    </type>
+    
+    <!-- Generator dependencies -->
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Model\Token\Generator">
+        <arguments>
+            <argument name="jwtManager" xsi:type="object">Magento\Framework\Jwt\JwtManagerInterface</argument>
+            <argument name="config" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Model\Config</argument>
+        </arguments>
+    </type>
+    
+    <!-- Validator dependencies -->
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Model\Token\Validator">
+        <arguments>
+            <argument name="jwtManager" xsi:type="object">Magento\Framework\Jwt\JwtManagerInterface</argument>
+            <argument name="config" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Model\Config</argument>
+        </arguments>
+    </type>
+    
+    <!-- Register console commands -->
+    <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="thedevkitchen_jwt_test" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Console\Command\TestJwtService</item>
+                <item name="thedevkitchen_jwt_generate" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Console\Command\GenerateToken</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

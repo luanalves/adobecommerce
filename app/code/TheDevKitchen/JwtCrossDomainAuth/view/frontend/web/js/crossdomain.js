@@ -83,67 +83,46 @@ define([
                             }
                         }
                     },
-                    // error: function (xhr, status, error) {
-                    //     // Hide loader if error
-                    //     $('.crossdomain-loading-mask').hide();
+                    error: function (xhr, status, error) {
+                        // Hide loader if error
+                        $('.crossdomain-loading-mask').hide();
                         
-                    //     // Log detailed error information
-                    //     console.error('AJAX error details:', {
-                    //         status: status,
-                    //         statusCode: xhr.status,
-                    //         error: error,
-                    //         responseText: xhr.responseText
-                    //     });
+                        // Log detailed error information
+                        console.error('AJAX error details:', {
+                            status: status,
+                            statusCode: xhr.status,
+                            error: error,
+                            responseText: xhr.responseText
+                        });
                         
-                    //     // Special handling for different error types
-                    //     var errorMessage;
+                        // Special handling for different error types
+                        var errorMessage;
                         
-                    //     if (xhr.status === 404) {
-                    //         errorMessage = $t('The token generation endpoint could not be found. Please verify the module configuration.');
-                    //     } else if (xhr.status === 500) {
-                    //         errorMessage = $t('A server error occurred. Please check that PHP and the web server are functioning properly.');
-                    //     } else if (status === 'timeout') {
-                    //         errorMessage = $t('The request timed out. Please try again or contact customer service.');
-                    //     } else if (status === 'parsererror') {
-                    //         errorMessage = $t('The server response could not be parsed. Please try again later.');
-                    //     } else {
-                    //         // Try to parse JSON response
-                    //         errorMessage = $t('An error occurred while switching stores. Please try again.');
-                    //         try {
-                    //             var responseJson = JSON.parse(xhr.responseText);
-                    //             console.log('Parsed error response:', responseJson);
-                    //             if (responseJson.message) {
-                    //                 errorMessage = responseJson.message;
-                    //             }
-                    //         } catch (e) {
-                    //             console.error('Error parsing error response:', e);
-                    //         }
-                    //     }
+                        if (xhr.status === 404) {
+                            errorMessage = $t('The token generation endpoint could not be found. Please verify the module configuration.');
+                        } else if (xhr.status === 500) {
+                            errorMessage = $t('A server error occurred.');
+                        } else if (status === 'timeout') {
+                            errorMessage = $t('The request timed out. Please try again or contact customer service.');
+                        } else if (status === 'parsererror') {
+                            errorMessage = $t('The server response could not be parsed. Please try again later.');
+                        } else {
+                            // Try to parse JSON response
+                            errorMessage = $t('An error occurred while switching stores. Please try again.');
+                            try {
+                                var responseJson = JSON.parse(xhr.responseText);
+                                console.log('Parsed error response:', responseJson);
+                                if (responseJson.message) {
+                                    errorMessage = responseJson.message;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing error response:', e);
+                            }
+                        }
                         
-                    //     // Show more detailed error message
-                    //     alert($t('Error: ') + errorMessage + ' (' + xhr.status + ' ' + error + ')');
-                    // },
-                    // // Set a timeout for the AJAX request (15 seconds)
-                    // timeout: 15000,
-                    // // Handle specific HTTP status codes
-                    // statusCode: {
-                    //     403: function() {
-                    //         $('.crossdomain-loading-mask').hide();
-                    //         alert($t('You do not have permission to access this feature. Please log in and try again.'));
-                    //     },
-                    //     404: function() {
-                    //         $('.crossdomain-loading-mask').hide();
-                    //         alert($t('The token generation endpoint could not be found (404). Please check the module configuration.'));
-                    //     },
-                    //     500: function() {
-                    //         $('.crossdomain-loading-mask').hide();
-                    //         alert($t('A server error occurred (500). Please verify that PHP-FPM is running properly.'));
-                    //     },
-                    //     504: function() {
-                    //         $('.crossdomain-loading-mask').hide();
-                    //         alert($t('Request timed out (504). Please try again later.'));
-                    //     }
-                    // }
+                        // Show more detailed error message
+                        alert($t('Error: ') + errorMessage + ' (' + xhr.status + ' ' + error + ')');
+                    }
                 });
             });
         });

@@ -11,6 +11,7 @@ TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless use
 - Asynchronous processing via message broker (RabbitMQ)
 - Configurable via admin interface
 - Support for multiple languages (currently English and Brazilian Portuguese)
+- CLI commands for JWT token generation and validation
 
 ## Requirements
 
@@ -94,6 +95,48 @@ Once configured:
 2. A "Switch Store" link will appear in the header (only for logged-in customers)
 3. Clicking this link will show a loader and redirect to the configured target domain
 4. Authentication will happen automatically using the JWT token
+
+## CLI Commands
+
+### JWT Token Generation
+
+The module provides a command-line interface for generating JWT tokens for testing and development purposes.
+
+**Basic Usage**:
+```bash
+bin/magento thedevkitchen:jwt:generate
+```
+
+This will generate a JWT token with default settings.
+
+**Options**:
+
+- `--subject` or `-s`: Set the subject identifier (e.g., customer ID)
+  ```bash
+  bin/magento thedevkitchen:jwt:generate --subject=customer_123
+  ```
+
+- `--expiration` or `-e`: Set token expiration time in seconds (default is 3600)
+  ```bash
+  bin/magento thedevkitchen:jwt:generate --expiration=600
+  ```
+
+- `--claim` or `-c`: Add custom claims in format name:value (can be used multiple times)
+  ```bash
+  bin/magento thedevkitchen:jwt:generate --claim="email:test@example.com" --claim="role:admin"
+  ```
+
+**Complex Example**:
+```bash
+bin/magento thedevkitchen:jwt:generate --subject=customer_123 --expiration=1800 --claim="email:john@example.com" --claim="roles:customer" --claim="store_id:1"
+```
+
+This will generate a JWT token with:
+- Subject: customer_123
+- Expiration: 30 minutes (1800 seconds)
+- Custom claims: email, roles, and store_id
+
+The command outputs the complete token, detailed payload information, and expiration details.
 
 ## Troubleshooting
 

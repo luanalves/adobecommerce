@@ -16,7 +16,7 @@ interface TokenServiceInterface
      * @return string The generated token
      */
     public function generateToken(array $payload, ?int $lifetime = null): string;
-    
+
     /**
      * Validate a JWT token
      *

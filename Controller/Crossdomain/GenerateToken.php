@@ -9,11 +9,9 @@ use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Framework\UrlInterface;
-use Magento\Framework\Jwt\JwtManagerInterface;
-use Magento\Framework\Jwt\HeaderParameterInterface;
 use Psr\Log\LoggerInterface;
 use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
-use TheDevKitchen\JwtCrossDomainAuth\Model\TokenGenerator;
+use TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface;
 
 /**
  * Controller for generating JWT tokens for cross-domain authentication
@@ -46,19 +44,14 @@ class GenerateToken implements HttpGetActionInterface
     private $urlBuilder;
 
     /**
-     * @var JwtManagerInterface
-     */
-    private $jwtManager;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
-    
+
     /**
-     * @var TokenGenerator
+     * @var TokenServiceInterface
      */
-    private $tokenGenerator;
+    private $tokenService;
 
     /**
      * @param JsonFactory $resultJsonFactory
@@ -66,9 +59,8 @@ class GenerateToken implements HttpGetActionInterface
      * @param Config $config
      * @param DateTime $dateTime
      * @param UrlInterface $urlBuilder
-     * @param JwtManagerInterface $jwtManager
      * @param LoggerInterface $logger
-     * @param TokenGenerator $tokenGenerator
+     * @param TokenServiceInterface $tokenService
      */
     public function __construct(
         JsonFactory $resultJsonFactory,
@@ -76,18 +68,16 @@ class GenerateToken implements HttpGetActionInterface
         Config $config,
         DateTime $dateTime,
         UrlInterface $urlBuilder,
-        JwtManagerInterface $jwtManager,
         LoggerInterface $logger,
-        TokenGenerator $tokenGenerator
+        TokenServiceInterface $tokenService
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->customerSession = $customerSession;
         $this->config = $config;
         $this->dateTime = $dateTime;
         $this->urlBuilder = $urlBuilder;
-        $this->jwtManager = $jwtManager;
         $this->logger = $logger;
-        $this->tokenGenerator = $tokenGenerator;
+        $this->tokenService = $tokenService;
     }
 
     /**
@@ -98,7 +88,7 @@ class GenerateToken implements HttpGetActionInterface
     public function execute()
     {
         $resultJson = $this->resultJsonFactory->create();
-        
+
         try {
             // Check if module is enabled
             if (!$this->config->isEnabled()) {
@@ -112,26 +102,37 @@ class GenerateToken implements HttpGetActionInterface
 
             // Get the customer
             $customer = $this->customerSession->getCustomer();
-            
-            // Generate token using the TokenGenerator model
-            $jwt = $this->tokenGenerator->generateTokenForCustomer($customer);
-            
-            // Get current timestamp for logging
+
+            // Prepare payload for token
             $currentTime = $this->dateTime->timestamp();
+            $payload = [
+                'sub' => (string)$customer->getId(),
+                'email' => $customer->getEmail(),
+                'name' => $customer->getName(),
+                'iss' => $this->urlBuilder->getBaseUrl(),
+                'iat' => $currentTime,
+                'jti' => bin2hex(random_bytes(16)),
+                'aud' => [$this->config->getTargetDomain()]
+            ];
+
+            // Generate token using TokenService
+            $jwt = $this->tokenService->generateToken($payload);
+
+            // Calculate expiration time for logging (based on config)
             $expirationTime = $currentTime + $this->config->getJwtExpiration();
-            
+
             // Log successful token generation (without exposing the token)
             $this->logger->info('JWT token generated for customer', [
                 'customer_id' => $customer->getId(),
                 'expiration' => date('Y-m-d H:i:s', $expirationTime)
             ]);
-            
+
             // Return success response with token
             return $resultJson->setData([
                 'success' => true,
                 'token' => $jwt
             ]);
-            
+
         } catch (LocalizedException $e) {
             $this->logger->notice('JWT token generation failed: ' . $e->getMessage());
             return $resultJson->setData([

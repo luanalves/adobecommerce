@@ -16,14 +16,14 @@
         </arguments>
     </virtualType>
     
-    <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Crossdomain\GenerateToken">
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Token\Index">
         <arguments>
             <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
         </arguments>
     </type>
     
     <!-- Configure Login controller to use the same JWT manager -->
-    <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Crossdomain\Login">
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Login\Index">
         <arguments>
             <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
         </arguments>

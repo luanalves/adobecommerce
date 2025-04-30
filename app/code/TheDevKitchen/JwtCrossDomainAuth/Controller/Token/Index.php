@@ -7,7 +7,7 @@ use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Psr\Log\LoggerInterface;
 use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
-use TheDevKitchen\JwtCrossDomainAuth\Model\TokenGenerator;
+use TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface;
 
 class Index implements HttpGetActionInterface
 {
@@ -22,9 +22,9 @@ class Index implements HttpGetActionInterface
     private $config;
 
     /**
-     * @var TokenGenerator
+     * @var TokenServiceInterface
      */
-    private $tokenGenerator;
+    private $tokenService;
 
     /**
      * @var CustomerSession
@@ -41,20 +41,20 @@ class Index implements HttpGetActionInterface
      *
      * @param JsonFactory $resultJsonFactory
      * @param Config $config
-     * @param TokenGenerator $tokenGenerator
+     * @param TokenServiceInterface $tokenService
      * @param CustomerSession $customerSession
      * @param LoggerInterface $logger
      */
     public function __construct(
         JsonFactory $resultJsonFactory,
         Config $config,
-        TokenGenerator $tokenGenerator,
+        TokenServiceInterface $tokenService,
         CustomerSession $customerSession,
         LoggerInterface $logger
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->config = $config;
-        $this->tokenGenerator = $tokenGenerator;
+        $this->tokenService = $tokenService;
         $this->customerSession = $customerSession;
         $this->logger = $logger;
     }
@@ -82,8 +82,18 @@ class Index implements HttpGetActionInterface
             // Get customer data
             $customer = $this->customerSession->getCustomer();
 
-            // Generate token for the customer
-            $token = $this->tokenGenerator->generateTokenForCustomer($customer);
+            // Prepare payload for token
+            $payload = [
+                'sub' => (string)$customer->getId(),
+                'email' => $customer->getEmail(),
+                'name' => $customer->getName(),
+                'iss' => 'magento2',
+                'iat' => time(),
+                'jti' => bin2hex(random_bytes(16))
+            ];
+
+            // Generate token using the TokenService
+            $token = $this->tokenService->generateToken($payload);
 
             // Log success message (without exposing the token)
             $this->logger->info('JWT token generated for cross-domain authentication', [

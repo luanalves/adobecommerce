@@ -63,7 +63,7 @@ define([
                             console.log('Token received successfully, redirecting to:', targetDomain);
                             
                             // Construct target URL with token
-                            var targetUrl = targetDomain + '/crossdomain/login?token=' + encodeURIComponent(response.token);
+                            var targetUrl = targetDomain + '/jwt/login?token=' + encodeURIComponent(response.token);
                             console.log('Full redirect URL:', targetUrl);
                             
                             // Redirect to the new domain with the token

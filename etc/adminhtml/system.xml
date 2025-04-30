@@ -11,10 +11,6 @@
                     <label>Enable Module</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="target_domain" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Target Domain</label>
-                    <comment>Enter the target domain URL for cross-domain authentication (e.g., https://second-store.com)</comment>
-                </field>
             </group>
         </section>
     </system>

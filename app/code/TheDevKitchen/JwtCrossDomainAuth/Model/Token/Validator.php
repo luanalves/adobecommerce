@@ -14,6 +14,8 @@ use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 
 /**
  * JWT Token Validator
+ * Handles validation and verification of JWT tokens for cross-domain authentication
+ * Performs security checks including signature verification and expiration validation
  */
 class Validator
 {
@@ -28,8 +30,10 @@ class Validator
     private $config;
     
     /**
-     * @param JwtManagerInterface $jwtManager
-     * @param Config $config
+     * Constructor
+     * 
+     * @param JwtManagerInterface $jwtManager JWT service for token operations
+     * @param Config $config Module configuration and security settings
      */
     public function __construct(
         JwtManagerInterface $jwtManager,
@@ -38,17 +42,39 @@ class Validator
         $this->jwtManager = $jwtManager;
         $this->config = $config;
     }
+
+    /**
+     * Validates that the module is enabled
+     * Security check to prevent token validation when module is disabled
+     * 
+     * @throws LocalizedException if module is disabled
+     * @return void
+     */
+    private function validateModuleEnabled(): void
+    {
+        if (!$this->config->isEnabled()) {
+            throw new LocalizedException(__('Cross-domain authentication is disabled.'));
+        }
+    }
     
     /**
-     * Validate a JWT token
+     * Validate a JWT token and extract its claims
+     * Performs comprehensive token validation including:
+     * - Token format validation
+     * - Signature verification
+     * - Expiration check
+     * - Payload structure verification
      *
-     * @param string $token
-     * @return array Claims from the token
-     * @throws LocalizedException If validation fails
+     * @param string $token JWT token to validate
+     * @return array Validated claims from the token
+     * @throws LocalizedException If validation fails for any reason
      */
     public function validate(string $token): array
     {
         try {
+            // Check if module is enabled first
+            $this->validateModuleEnabled();
+
             // Manual JWT validation
             $tokenParts = explode('.', $token);
             if (count($tokenParts) != 3) {
@@ -57,7 +83,7 @@ class Validator
             
             list($headerBase64, $payloadBase64, $signatureBase64) = $tokenParts;
             
-            // Verify signature
+            // Verify signature using HMAC-SHA256
             $secretKey = $this->config->getSecretKey();
             $signature = hash_hmac('sha256', "$headerBase64.$payloadBase64", $secretKey, true);
             $calculatedSignature = base64_encode($signature);
@@ -66,13 +92,13 @@ class Validator
                 throw new LocalizedException(__('Token signature verification failed'));
             }
             
-            // Decode payload
+            // Decode and validate payload structure
             $payload = json_decode($this->base64UrlDecode($payloadBase64), true);
             if (!is_array($payload)) {
                 throw new LocalizedException(__('Invalid token payload'));
             }
             
-            // Check expiration
+            // Verify token expiration
             if (isset($payload['exp']) && $payload['exp'] < time()) {
                 throw new LocalizedException(__('Token has expired'));
             }
@@ -87,10 +113,11 @@ class Validator
     }
     
     /**
-     * Decode base64url encoded string
+     * Decode a base64url encoded string
+     * Handles URL-safe base64 encoding with proper padding restoration
      *
-     * @param string $input
-     * @return string
+     * @param string $input Base64url encoded string
+     * @return string Decoded data
      */
     private function base64UrlDecode(string $input): string
     {

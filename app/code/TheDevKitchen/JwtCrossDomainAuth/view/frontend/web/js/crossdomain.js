@@ -2,6 +2,9 @@
  * @author      Luan Silva
  * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
  * @license     https://www.thedevkitchen.com.br  Copyright
+ *
+ * Frontend JavaScript handler for cross-domain store switching
+ * Manages the UI interaction and token acquisition process
  */
 
 define([
@@ -11,15 +14,15 @@ define([
     'use strict';
     
     return function (config) {
-        // Initialize on document ready
+        // Initialize handler when document is ready
         $(function () {
             console.log('Cross-domain switcher initialized with config:', config);
             
-            // Find and attach click handler to all cross-domain links
+            // Attach click handlers to all cross-domain links
             $('.cross-domain-link').on('click', function (e) {
                 e.preventDefault();
                 
-                // Get target domain and store information from data attributes
+                // Extract target store information from data attributes
                 var targetDomain = $(this).data('domain');
                 var storeId = $(this).data('store-id');
                 var storeName = $(this).text().trim();
@@ -29,13 +32,14 @@ define([
                     storeId: storeId,
                     storeName: storeName
                 });
-                
+
+                // Validate required data
                 if (!targetDomain) {
                     console.error('Target domain not specified');
                     return;
                 }
                 
-                // Show loader with custom CSS class
+                // Create and display loading indicator
                 if (!$('.crossdomain-loading-mask').length) {
                     $('body').append(
                         '<div class="crossdomain-loading-mask">' +
@@ -48,12 +52,13 @@ define([
                     $('.crossdomain-loading-mask').show();
                 }
                 
-                // Log request details for debugging
-                console.log('Making AJAX request to:', config.tokenUrl, {
+                // Log token request details for debugging
+                console.log('Requesting authentication token:', {
+                    url: config.tokenUrl,
                     storeId: storeId
                 });
                 
-                // Make AJAX call to get JWT token
+                // Request JWT token for cross-domain authentication
                 $.ajax({
                     url: config.tokenUrl,
                     type: 'GET',
@@ -66,22 +71,21 @@ define([
                         console.log('Token response received:', response);
                         
                         if (response.success && response.token) {
-                            console.log('Token received successfully, redirecting to:', targetDomain);
+                            console.log('Token received, redirecting to target domain');
                             
-                            // Construct target URL with token
+                            // Build target URL with authentication token
                             var targetUrl = targetDomain + '/jwt/login?token=' + encodeURIComponent(response.token);
-                            console.log('Full redirect URL:', targetUrl);
+                            console.log('Redirect URL prepared:', targetUrl);
                             
-                            // Redirect to the new domain with the token
+                            // Perform the redirect with the token
                             window.location.href = targetUrl;
                         } else {
-                            // Hide loader if error
+                            // Handle error response
                             $('.crossdomain-loading-mask').hide();
                             
-                            // Log error details
                             console.error('Token generation failed:', response);
                             
-                            // Show error message
+                            // Display appropriate error message
                             if (response.message) {
                                 alert($t('Error: ') + response.message);
                             } else {
@@ -90,18 +94,18 @@ define([
                         }
                     },
                     error: function (xhr, status, error) {
-                        // Hide loader if error
+                        // Hide loading indicator on error
                         $('.crossdomain-loading-mask').hide();
                         
-                        // Log detailed error information
-                        console.error('AJAX error details:', {
+                        // Log detailed error information for debugging
+                        console.error('AJAX request failed:', {
                             status: status,
                             statusCode: xhr.status,
                             error: error,
                             responseText: xhr.responseText
                         });
                         
-                        // Special handling for different error types
+                        // Handle different error scenarios
                         var errorMessage;
                         
                         if (xhr.status === 404) {
@@ -113,7 +117,7 @@ define([
                         } else if (status === 'parsererror') {
                             errorMessage = $t('The server response could not be parsed. Please try again later.');
                         } else {
-                            // Try to parse JSON response
+                            // Default error handling
                             errorMessage = $t('An error occurred while switching stores. Please try again.');
                             try {
                                 var responseJson = JSON.parse(xhr.responseText);
@@ -126,7 +130,7 @@ define([
                             }
                         }
                         
-                        // Show more detailed error message
+                        // Display error message to user
                         alert($t('Error: ') + errorMessage + ' (' + xhr.status + ' ' + error + ')');
                     }
                 });

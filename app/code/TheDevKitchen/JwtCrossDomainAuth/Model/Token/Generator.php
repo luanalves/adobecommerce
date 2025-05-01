@@ -14,22 +14,27 @@ use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 
 /**
  * JWT Token Generator
+ * Handles the creation of secure JSON Web Tokens for cross-domain authentication
  */
 class Generator
 {
     /**
+     * Magento's JWT Manager for token operations
      * @var JwtManagerInterface
      */
     private $jwtManager;
     
     /**
+     * Module configuration provider
      * @var Config
      */
     private $config;
     
     /**
-     * @param JwtManagerInterface $jwtManager
-     * @param Config $config
+     * Constructor
+     * 
+     * @param JwtManagerInterface $jwtManager JWT service for token operations
+     * @param Config $config Module configuration access
      */
     public function __construct(
         JwtManagerInterface $jwtManager,
@@ -38,18 +43,36 @@ class Generator
         $this->jwtManager = $jwtManager;
         $this->config = $config;
     }
+
+    /**
+     * Validates that the module is enabled before executing operations
+     * Security check to prevent token generation when module is disabled
+     * 
+     * @throws LocalizedException if module is disabled
+     * @return void
+     */
+    private function validateModuleEnabled(): void
+    {
+        if (!$this->config->isEnabled()) {
+            throw new LocalizedException(__('Cross-domain authentication is disabled.'));
+        }
+    }
     
     /**
-     * Generate a JWT token
+     * Generate a JWT token with specified payload and optional lifetime
+     * Creates a secure token containing customer information for cross-domain auth
      *
-     * @param array $payload Data to include in the token
+     * @param array $payload Data to include in the token (customer info, etc)
      * @param int|null $lifetime Token lifetime in seconds (overrides config)
-     * @return string
-     * @throws LocalizedException
+     * @return string Generated JWT token string
+     * @throws LocalizedException If token generation fails
      */
     public function generate(array $payload, ?int $lifetime = null): string
     {
         try {
+            // Check if module is enabled first
+            $this->validateModuleEnabled();
+
             // Add standard claims
             $issuedAt = time();
             $expiration = $issuedAt + ($lifetime ?? $this->config->getJwtExpiration());
@@ -75,10 +98,11 @@ class Generator
     }
     
     /**
-     * Encode to base64url (URL-safe base64)
+     * Encode data to base64url format (URL-safe base64)
+     * Converts binary data to a format safe for URLs without padding
      *
-     * @param string $input
-     * @return string
+     * @param string $input Raw data to encode
+     * @return string URL-safe base64 encoded string
      */
     private function base64UrlEncode(string $input): string
     {

@@ -26,6 +26,16 @@ class Config
     private const XML_PATH_ENABLED = 'jwt_crossdomain_auth/general/enabled';
 
     /**
+     * Configuration path for logging enabled status
+     */
+    private const XML_PATH_LOGGING_ENABLED = 'jwt_crossdomain_auth/logging/enabled';
+
+    /**
+     * Configuration path for log file name
+     */
+    private const XML_PATH_LOG_FILE = 'jwt_crossdomain_auth/logging/log_file';
+
+    /**
      * @var ScopeConfigInterface
      */
     private $scopeConfig;
@@ -76,6 +86,39 @@ class Config
     {
         return (bool)$this->scopeConfig->isSetFlag(
             self::XML_PATH_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Check if logging is enabled
+     * Verifies if logging functionality is active
+     *
+     * @param int|string|null $storeId Store view ID to check configuration for
+     * @return bool True if logging is enabled, false otherwise
+     */
+    public function isLoggingEnabled($storeId = null): bool
+    {
+        return $this->isEnabled($storeId) && 
+            (bool)$this->scopeConfig->isSetFlag(
+                self::XML_PATH_LOGGING_ENABLED,
+                ScopeInterface::SCOPE_STORE,
+                $storeId
+            );
+    }
+
+    /**
+     * Get configured log file name
+     * Returns the log file name for storing logs
+     *
+     * @param int|string|null $storeId Store view ID to get log file name for
+     * @return string|null Log file name or null if not configured
+     */
+    public function getLogFileName($storeId = null): ?string
+    {
+        return $this->scopeConfig->getValue(
+            self::XML_PATH_LOG_FILE,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

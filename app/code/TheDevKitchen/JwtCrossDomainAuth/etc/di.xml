@@ -36,6 +36,7 @@
     <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Token\Index">
         <arguments>
             <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
+            <argument name="logger" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Logger\VirtualLogger</argument>
         </arguments>
     </type>
     
@@ -43,6 +44,7 @@
     <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Login\Index">
         <arguments>
             <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>
+            <argument name="logger" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Logger\VirtualLogger</argument>
         </arguments>
     </type>
     
@@ -83,4 +85,19 @@
             </argument>
         </arguments>
     </type>
+    
+    <!-- Logger Configuration -->
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Logger\Handler">
+        <arguments>
+            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <virtualType name="TheDevKitchen\JwtCrossDomainAuth\Logger\VirtualLogger" type="TheDevKitchen\JwtCrossDomainAuth\Logger\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">jwt_auth</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="system" xsi:type="object">TheDevKitchen\JwtCrossDomainAuth\Logger\Handler</item>
+            </argument>
+        </arguments>
+    </virtualType>
 </config>

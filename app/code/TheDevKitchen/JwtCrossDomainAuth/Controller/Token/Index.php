@@ -15,7 +15,7 @@ use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Exception\LocalizedException;
-use Psr\Log\LoggerInterface;
+use TheDevKitchen\JwtCrossDomainAuth\Helper\LoggerHelper;
 use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 use TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface;
 
@@ -50,10 +50,10 @@ class Index implements HttpGetActionInterface
     private $customerSession;
 
     /**
-     * System logger
-     * @var LoggerInterface
+     * Logger helper
+     * @var LoggerHelper
      */
-    private $logger;
+    private $loggerHelper;
 
     /**
      * Constructor
@@ -62,20 +62,20 @@ class Index implements HttpGetActionInterface
      * @param Config $config Module configuration
      * @param TokenServiceInterface $tokenService JWT token service
      * @param CustomerSession $customerSession Customer session handler
-     * @param LoggerInterface $logger System logger
+     * @param LoggerHelper $loggerHelper Logger helper
      */
     public function __construct(
         JsonFactory $resultJsonFactory,
         Config $config,
         TokenServiceInterface $tokenService,
         CustomerSession $customerSession,
-        LoggerInterface $logger
+        LoggerHelper $loggerHelper
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->config = $config;
         $this->tokenService = $tokenService;
         $this->customerSession = $customerSession;
-        $this->logger = $logger;
+        $this->loggerHelper = $loggerHelper;
     }
 
     /**
@@ -122,17 +122,21 @@ class Index implements HttpGetActionInterface
             $token = $this->tokenService->generateToken($payload);
 
             // Log success (without exposing token)
-            $this->logger->info('JWT token generated for cross-domain authentication', [
-                'customer_id' => $customer->getId()
-            ]);
+            $this->loggerHelper->log(
+                'JWT token generated for cross-domain authentication',
+                [
+                    'customer_id' => $customer->getId(),
+                    'token_id' => $payload['jti']
+                ]
+            );
 
             return $result->setData(['success' => true, 'token' => $token]);
 
         } catch (LocalizedException $e) {
-            $this->logger->notice('JWT token generation failed: ' . $e->getMessage());
+            $this->loggerHelper->log('JWT token generation failed: ' . $e->getMessage(), [], 'warning');
             return $result->setData(['success' => false, 'message' => $e->getMessage()]);
         } catch (\Exception $e) {
-            $this->logger->error('Error generating JWT token: ' . $e->getMessage());
+            $this->loggerHelper->log('Error generating JWT token: ' . $e->getMessage(), ['exception' => $e], 'error');
             return $result->setData([
                 'success' => false,
                 'message' => __('An error occurred while generating the authentication token.')

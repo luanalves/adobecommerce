@@ -1,3 +1,11 @@
+<!--
+/**
+ * @author      Luan Silva
+ * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
+ * @license     https://www.thedevkitchen.com.br  Copyright
+ */
+-->
+
 # JWT Cross-Domain Authentication for Magento 2
 
 ## Overview

@@ -1,4 +1,9 @@
 <?php
+/**
+ * @author      Luan Silva
+ * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
+ * @license     https://www.thedevkitchen.com.br  Copyright
+ */
 declare(strict_types=1);
 
 namespace TheDevKitchen\JwtCrossDomainAuth\Service;
@@ -15,12 +20,12 @@ class TokenService implements TokenServiceInterface
      * @var Generator
      */
     private $generator;
-    
+
     /**
      * @var Validator
      */
     private $validator;
-    
+
     /**
      * @param Generator $generator
      * @param Validator $validator
@@ -32,7 +37,7 @@ class TokenService implements TokenServiceInterface
         $this->generator = $generator;
         $this->validator = $validator;
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -40,7 +45,7 @@ class TokenService implements TokenServiceInterface
     {
         return $this->generator->generate($payload, $lifetime);
     }
-    
+
     /**
      * @inheritDoc
      */

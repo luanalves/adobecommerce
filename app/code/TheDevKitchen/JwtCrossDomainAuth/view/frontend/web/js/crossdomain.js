@@ -1,3 +1,9 @@
+/**
+ * @author      Luan Silva
+ * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
+ * @license     https://www.thedevkitchen.com.br  Copyright
+ */
+
 define([
     'jquery',
     'mage/translate'

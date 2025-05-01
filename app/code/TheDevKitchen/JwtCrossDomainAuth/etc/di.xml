@@ -1,4 +1,11 @@
 <?xml version="1.0"?>
+<!--
+/**
+ * @author      Luan Silva
+ * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
+ * @license     https://www.thedevkitchen.com.br  Copyright
+ */
+-->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <!-- JWT Configuration for cross-domain authentication -->
     <virtualType name="TheDevKitchenJwtCrossDomainContentCreator" type="Magento\Framework\Jwt\JwtManager">

@@ -1,4 +1,9 @@
 <?php
+/**
+ * @author      Luan Silva
+ * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
+ * @license     https://www.thedevkitchen.com.br  Copyright
+ */
 declare(strict_types=1);
 
 namespace TheDevKitchen\JwtCrossDomainAuth\Test\Integration\Controller\Token;
@@ -27,7 +32,7 @@ class IndexTest extends AbstractController
         parent::setUp();
         $this->customerSession = $this->_objectManager->get(Session::class);
         $this->customerRepository = $this->_objectManager->get(\Magento\Customer\Api\CustomerRepositoryInterface::class);
-        
+
         // Ensure customer session is clean
         $this->customerSession->logout();
     }
@@ -40,7 +45,7 @@ class IndexTest extends AbstractController
     {
         // Get customer from fixture
         $customer = $this->customerRepository->get('customer@example.com');
-        
+
         // Login customer
         $this->customerSession->setCustomerDataAsLoggedIn($customer);
         $this->assertTrue($this->customerSession->isLoggedIn());
@@ -52,13 +57,13 @@ class IndexTest extends AbstractController
         // Verify response format
         $this->assertJson($this->getResponse()->getBody());
         $responseData = json_decode($this->getResponse()->getBody(), true);
-        
+
         // Check response structure
         $this->assertIsArray($responseData);
         $this->assertArrayHasKey('success', $responseData);
         $this->assertArrayHasKey('token', $responseData);
         $this->assertTrue($responseData['success']);
-        
+
         // Check token format (should be a string with 3 parts separated by periods)
         $token = $responseData['token'];
         $this->assertIsString($token);
@@ -82,7 +87,7 @@ class IndexTest extends AbstractController
         // Verify response format
         $this->assertJson($this->getResponse()->getBody());
         $responseData = json_decode($this->getResponse()->getBody(), true);
-        
+
         // Check response structure
         $this->assertIsArray($responseData);
         $this->assertArrayHasKey('success', $responseData);
@@ -99,7 +104,7 @@ class IndexTest extends AbstractController
     {
         // Get customer from fixture
         $customer = $this->customerRepository->get('customer@example.com');
-        
+
         // Login customer
         $this->customerSession->setCustomerDataAsLoggedIn($customer);
         $this->assertTrue($this->customerSession->isLoggedIn());
@@ -111,7 +116,7 @@ class IndexTest extends AbstractController
         // Verify response format
         $this->assertJson($this->getResponse()->getBody());
         $responseData = json_decode($this->getResponse()->getBody(), true);
-        
+
         // Check response structure
         $this->assertIsArray($responseData);
         $this->assertArrayHasKey('success', $responseData);

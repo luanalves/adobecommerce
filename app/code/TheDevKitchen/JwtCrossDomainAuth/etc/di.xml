@@ -16,6 +16,16 @@
         </arguments>
     </virtualType>
     
+    <!-- Configuração para a classe Config com suas dependências -->
+    <type name="TheDevKitchen\JwtCrossDomainAuth\Model\Config">
+        <arguments>
+            <argument name="scopeConfig" xsi:type="object">Magento\Framework\App\Config\ScopeConfigInterface</argument>
+            <argument name="encryptor" xsi:type="object">Magento\Framework\Encryption\EncryptorInterface</argument>
+            <argument name="deploymentConfig" xsi:type="object">Magento\Framework\App\DeploymentConfig</argument>
+            <argument name="urlBuilder" xsi:type="object">Magento\Framework\UrlInterface</argument>
+        </arguments>
+    </type>
+    
     <type name="TheDevKitchen\JwtCrossDomainAuth\Controller\Token\Index">
         <arguments>
             <argument name="jwtManager" xsi:type="object">TheDevKitchenJwtCrossDomainContentCreator</argument>

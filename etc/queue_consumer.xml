@@ -1,4 +1,11 @@
 <?xml version="1.0"?>
+<!--
+/**
+ * @author      Luan Silva
+ * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
+ * @license     https://www.thedevkitchen.com.br  Copyright
+ */
+-->
 <!-- Queue consumer configuration -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework-message-queue:etc/queue_consumer.xsd">
     <consumer name="crossdomain_auth_login_consumer" queue="crossdomain.auth.login" handler="TheDevKitchen\JwtCrossDomainAuth\Queue\Consumer\LoginLogger" />

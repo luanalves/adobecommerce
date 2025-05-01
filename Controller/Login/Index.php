@@ -3,6 +3,9 @@
  * @author      Luan Silva
  * @copyright   2025 The Dev Kitchen (https://www.thedevkitchen.com.br)
  * @license     https://www.thedevkitchen.com.br  Copyright
+ *
+ * Login controller for cross-domain authentication
+ * Handles the authentication process when users switch between domains
  */
 declare(strict_types=1);
 
@@ -22,7 +25,8 @@ use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 use TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface;
 
 /**
- * Controller for validating JWT tokens for cross-domain authentication and logging in customers
+ * Controller for validating JWT tokens and authenticating customers
+ * Handles the receiving end of cross-domain authentication process
  */
 class Index implements HttpGetActionInterface
 {
@@ -72,15 +76,17 @@ class Index implements HttpGetActionInterface
     private $urlBuilder;
 
     /**
-     * @param RequestInterface $request
-     * @param RedirectFactory $resultRedirectFactory
-     * @param MessageManagerInterface $messageManager
-     * @param CustomerSession $customerSession
-     * @param CustomerRepositoryInterface $customerRepository
-     * @param TokenServiceInterface $tokenService
-     * @param Config $config
-     * @param LoggerInterface $logger
-     * @param UrlInterface $urlBuilder
+     * Constructor
+     * 
+     * @param RequestInterface $request HTTP request handler
+     * @param RedirectFactory $resultRedirectFactory Redirect response factory
+     * @param MessageManagerInterface $messageManager User message manager
+     * @param CustomerSession $customerSession Customer session handler
+     * @param CustomerRepositoryInterface $customerRepository Customer data access
+     * @param TokenServiceInterface $tokenService JWT token service
+     * @param Config $config Module configuration
+     * @param LoggerInterface $logger System logger
+     * @param UrlInterface $urlBuilder URL generation service
      */
     public function __construct(
         RequestInterface $request,
@@ -105,7 +111,15 @@ class Index implements HttpGetActionInterface
     }
 
     /**
-     * Authenticate customer using JWT token
+     * Execute the cross-domain authentication process
+     * Validates JWT token and logs in the customer if token is valid
+     *
+     * Process flow:
+     * 1. Verify module is enabled
+     * 2. Extract and validate JWT token
+     * 3. Verify customer exists and matches token claims
+     * 4. Log customer in and create new session
+     * 5. Log authentication event for security tracking
      *
      * @return \Magento\Framework\Controller\Result\Redirect
      */
@@ -114,12 +128,12 @@ class Index implements HttpGetActionInterface
         $resultRedirect = $this->resultRedirectFactory->create();
 
         try {
-            // Check if module is enabled
+            // Verify module status
             if (!$this->config->isEnabled()) {
                 throw new LocalizedException(__('Cross-domain authentication is disabled.'));
             }
 
-            // Get JWT token from request
+            // Extract JWT token from request
             $token = $this->request->getParam('token');
             if (empty($token)) {
                 throw new LocalizedException(__('Authentication token is missing.'));
@@ -127,7 +141,7 @@ class Index implements HttpGetActionInterface
 
             $this->logger->debug('Processing JWT token: ' . substr($token, 0, 20) . '...');
 
-            // Validate JWT token using TokenService
+            // Validate token and extract claims
             try {
                 $claims = $this->tokenService->validateToken($token);
                 $this->logger->debug('JWT claims extracted: ' . json_encode(array_keys($claims)));
@@ -136,7 +150,7 @@ class Index implements HttpGetActionInterface
                 throw new LocalizedException(__('Invalid authentication token.'));
             }
 
-            // Get customer ID and email from claims
+            // Extract and verify customer information
             $customerId = $claims['sub'] ?? null;
             $customerEmail = $claims['email'] ?? null;
 
@@ -144,25 +158,25 @@ class Index implements HttpGetActionInterface
                 throw new LocalizedException(__('Customer ID missing in token.'));
             }
 
-            // Load customer by ID
+            // Load and verify customer
             try {
                 $customer = $this->customerRepository->getById((int)$customerId);
                 $this->logger->debug('Customer found: ' . $customerId);
 
-                // Verify that the customer email matches if available in token
+                // Verify email match if provided
                 if ($customerEmail && $customer->getEmail() !== $customerEmail) {
                     $this->logger->warning('Customer email mismatch');
                     throw new LocalizedException(__('Customer verification failed.'));
                 }
 
-                // Log the customer in
+                // Create customer session
                 $this->customerSession->setCustomerDataAsLoggedIn($customer);
                 $this->messageManager->addSuccessMessage(__('You have been automatically logged in.'));
 
                 // Log successful authentication
                 $this->logAuthenticationEvent($customerId, $customer->getEmail(), $claims['iss'] ?? null);
 
-                // Redirect to home page
+                // Redirect to homepage after successful login
                 $this->logger->debug('Login successful, redirecting to homepage');
                 return $resultRedirect->setPath('/');
 
@@ -179,16 +193,17 @@ class Index implements HttpGetActionInterface
             $this->messageManager->addErrorMessage(__('An error occurred during authentication. Please try logging in manually.'));
         }
 
-        // In case of any error, redirect to login page
+        // Redirect to login page on any error
         return $resultRedirect->setPath('customer/account/login');
     }
 
     /**
-     * Log the authentication event
+     * Log authentication event details for security tracking
+     * Records successful authentication attempts with relevant context
      *
-     * @param string $customerId
-     * @param string $customerEmail
-     * @param string|null $sourceDomain
+     * @param string $customerId Customer ID that was authenticated
+     * @param string $customerEmail Customer email for audit trail
+     * @param string|null $sourceDomain Origin domain of authentication request
      * @return void
      */
     private function logAuthenticationEvent(string $customerId, string $customerEmail, ?string $sourceDomain): void

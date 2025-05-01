@@ -16,9 +16,13 @@ use Magento\Store\Model\ScopeInterface;
 
 /**
  * Configuration model for JWT Cross-Domain Authentication
+ * Handles all configuration settings and security-related parameters
  */
 class Config
 {
+    /**
+     * Configuration path for module enabled status
+     */
     private const XML_PATH_ENABLED = 'jwt_crossdomain_auth/general/enabled';
 
     /**
@@ -42,10 +46,12 @@ class Config
     private $urlBuilder;
 
     /**
-     * @param ScopeConfigInterface $scopeConfig
-     * @param EncryptorInterface $encryptor
-     * @param DeploymentConfig $deploymentConfig
-     * @param UrlInterface $urlBuilder
+     * Constructor
+     * 
+     * @param ScopeConfigInterface $scopeConfig Core configuration interface
+     * @param EncryptorInterface $encryptor Encryption service for secure data
+     * @param DeploymentConfig $deploymentConfig Deployment configuration reader
+     * @param UrlInterface $urlBuilder URL generation service
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
@@ -61,9 +67,10 @@ class Config
 
     /**
      * Check if the module is enabled
+     * Verifies if cross-domain authentication functionality is active
      *
-     * @param int|string|null $storeId
-     * @return bool
+     * @param int|string|null $storeId Store view ID to check configuration for
+     * @return bool True if module is enabled, false otherwise
      */
     public function isEnabled($storeId = null): bool
     {
@@ -76,54 +83,48 @@ class Config
 
     /**
      * Get target domain for JWT token audience
-     * Para uma autenticação bidirecional, utilizamos o domínio base da loja atual
-     * como parte da audiência, permitindo verificação mais segura que usando '*'
+     * Returns the base domain of the current store for bidirectional authentication
      *
-     * @param int|string|null $storeId
-     * @return string
+     * @param int|string|null $storeId Store view ID to get domain for
+     * @return string Base domain URL without path
      */
     public function getTargetDomain($storeId = null): string
     {
-        // Usa o domínio base atual como valor de audiência
-        // Em uma autenticação bidirecional, ambos domínios devem reconhecer um ao outro
         return parse_url($this->urlBuilder->getBaseUrl(), PHP_URL_HOST);
     }
 
     /**
      * Get JWT expiration time in seconds
+     * Defines how long a token remains valid after generation
      *
-     * @param int|string|null $storeId
-     * @return int
+     * @param int|string|null $storeId Store view ID for configuration
+     * @return int Expiration time in seconds (default: 60 seconds)
      */
     public function getJwtExpiration($storeId = null): int
     {
-        // Valor padrão de 1 minuto (60 segundos)
         return 60;
     }
 
     /**
-     * Get JWT secret key usando a chave de criptografia nativa do Magento
-     * Este método centraliza a lógica de segurança para geração e validação de tokens
+     * Get JWT secret key using Magento's native encryption key
+     * This method centralizes security logic for token generation and validation
      *
-     * @param int|string|null $storeId
-     * @return string
+     * @param int|string|null $storeId Store view ID for configuration
+     * @return string Secret key for JWT signing
      */
     public function getSecretKey($storeId = null): string
     {
-        // Utiliza a chave de criptografia nativa do Magento
-        $cryptKey = null;
-
-        // Tenta obter a chave do deployment config primeiro (mais eficiente)
+        // Try to get key from deployment config first (more efficient)
         $cryptKey = $this->deploymentConfig->get('crypt/key');
 
-        // Se não conseguir, usa o encryptor como fallback
+        // Fallback to encryptor if not found in deployment config
         if (!$cryptKey) {
             $cryptKey = $this->encryptor->getKey();
         }
 
-        // Garante que temos uma chave segura de pelo menos 32 bytes
+        // Ensure we have a secure key of at least 32 bytes
         if (!$cryptKey || strlen($cryptKey) < 32) {
-            // Usa SHA-256 para garantir o tamanho adequado
+            // Use SHA-256 to guarantee appropriate length
             $cryptKey = hash('sha256', $cryptKey ?: 'magento-jwt-default');
         }
 

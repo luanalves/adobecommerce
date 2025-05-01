@@ -20,7 +20,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Message\ManagerInterface as MessageManagerInterface;
 use Magento\Framework\UrlInterface;
-use Psr\Log\LoggerInterface;
+use TheDevKitchen\JwtCrossDomainAuth\Helper\LoggerHelper;
 use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 use TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface;
 
@@ -66,9 +66,9 @@ class Index implements HttpGetActionInterface
     private $config;
 
     /**
-     * @var LoggerInterface
+     * @var LoggerHelper
      */
-    private $logger;
+    private $loggerHelper;
 
     /**
      * @var UrlInterface
@@ -85,7 +85,7 @@ class Index implements HttpGetActionInterface
      * @param CustomerRepositoryInterface $customerRepository Customer data access
      * @param TokenServiceInterface $tokenService JWT token service
      * @param Config $config Module configuration
-     * @param LoggerInterface $logger System logger
+     * @param LoggerHelper $loggerHelper Logger helper service
      * @param UrlInterface $urlBuilder URL generation service
      */
     public function __construct(
@@ -96,7 +96,7 @@ class Index implements HttpGetActionInterface
         CustomerRepositoryInterface $customerRepository,
         TokenServiceInterface $tokenService,
         Config $config,
-        LoggerInterface $logger,
+        LoggerHelper $loggerHelper,
         UrlInterface $urlBuilder
     ) {
         $this->request = $request;
@@ -106,7 +106,7 @@ class Index implements HttpGetActionInterface
         $this->customerRepository = $customerRepository;
         $this->tokenService = $tokenService;
         $this->config = $config;
-        $this->logger = $logger;
+        $this->loggerHelper = $loggerHelper;
         $this->urlBuilder = $urlBuilder;
     }
 
@@ -139,14 +139,14 @@ class Index implements HttpGetActionInterface
                 throw new LocalizedException(__('Authentication token is missing.'));
             }
 
-            $this->logger->debug('Processing JWT token: ' . substr($token, 0, 20) . '...');
+            $this->loggerHelper->log('Processing JWT token: ' . substr($token, 0, 20) . '...', [], 'debug');
 
             // Validate token and extract claims
             try {
                 $claims = $this->tokenService->validateToken($token);
-                $this->logger->debug('JWT claims extracted: ' . json_encode(array_keys($claims)));
+                $this->loggerHelper->log('JWT claims extracted: ' . json_encode(array_keys($claims)), [], 'debug');
             } catch (\Exception $e) {
-                $this->logger->warning('JWT validation failed: ' . $e->getMessage());
+                $this->loggerHelper->log('JWT validation failed: ' . $e->getMessage(), [], 'warning');
                 throw new LocalizedException(__('Invalid authentication token.'));
             }
 
@@ -161,11 +161,11 @@ class Index implements HttpGetActionInterface
             // Load and verify customer
             try {
                 $customer = $this->customerRepository->getById((int)$customerId);
-                $this->logger->debug('Customer found: ' . $customerId);
+                $this->loggerHelper->log('Customer found: ' . $customerId, [], 'debug');
 
                 // Verify email match if provided
                 if ($customerEmail && $customer->getEmail() !== $customerEmail) {
-                    $this->logger->warning('Customer email mismatch');
+                    $this->loggerHelper->log('Customer email mismatch', [], 'warning');
                     throw new LocalizedException(__('Customer verification failed.'));
                 }
 
@@ -177,19 +177,19 @@ class Index implements HttpGetActionInterface
                 $this->logAuthenticationEvent($customerId, $customer->getEmail(), $claims['iss'] ?? null);
 
                 // Redirect to homepage after successful login
-                $this->logger->debug('Login successful, redirecting to homepage');
+                $this->loggerHelper->log('Login successful, redirecting to homepage', [], 'debug');
                 return $resultRedirect->setPath('/');
 
             } catch (NoSuchEntityException $e) {
-                $this->logger->warning('Customer not found: ' . $e->getMessage());
+                $this->loggerHelper->log('Customer not found: ' . $e->getMessage(), [], 'warning');
                 throw new LocalizedException(__('We could not find your customer account. Please try logging in manually.'));
             }
 
         } catch (LocalizedException $e) {
-            $this->logger->notice('Login failed: ' . $e->getMessage());
+            $this->loggerHelper->log('Login failed: ' . $e->getMessage(), [], 'notice');
             $this->messageManager->addErrorMessage($e->getMessage());
         } catch (\Exception $e) {
-            $this->logger->error('Error during cross-domain authentication: ' . $e->getMessage(), ['exception' => $e]);
+            $this->loggerHelper->log('Error during cross-domain authentication: ' . $e->getMessage(), ['exception' => $e], 'error');
             $this->messageManager->addErrorMessage(__('An error occurred during authentication. Please try logging in manually.'));
         }
 
@@ -208,7 +208,7 @@ class Index implements HttpGetActionInterface
      */
     private function logAuthenticationEvent(string $customerId, string $customerEmail, ?string $sourceDomain): void
     {
-        $this->logger->info(
+        $this->loggerHelper->log(
             'Cross-domain authentication successful',
             [
                 'customer_id' => $customerId,

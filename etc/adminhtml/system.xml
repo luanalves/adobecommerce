@@ -3,13 +3,32 @@
     <system>
         <section id="jwt_crossdomain_auth" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
             <label>JWT Cross-Domain Auth</label>
-            <tab>general</tab>
+            <tab>advanced</tab>
             <resource>TheDevKitchen_JwtCrossDomainAuth::config</resource>
+            
             <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>General Settings</label>
-                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enable Module</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Enable or disable cross-domain authentication functionality</comment>
+                </field>
+            </group>
+
+            <group id="logging" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Logging Settings</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Logging</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Enable or disable detailed authentication logging</comment>
+                </field>
+                <field id="log_file" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Log File Name</label>
+                    <validate>required-entry</validate>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                    <comment>Name of the log file (e.g., jwt_auth.log)</comment>
                 </field>
             </group>
         </section>

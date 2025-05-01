@@ -10,13 +10,13 @@
 
 ## Overview
 
-TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless user authentication across multiple domains or websites within a Magento ecosystem. It uses JSON Web Tokens (JWT) for secure authentication and RabbitMQ for asynchronous processing of login events.
+TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless user authentication across multiple domains or websites within a Magento ecosystem. It uses JSON Web Tokens (JWT) for secure authentication with direct database logging for security auditing.
 
 ## Features
 
 - Secure cross-domain authentication using JWT tokens
 - Visual feedback with Magento's native loader during domain transitions
-- Asynchronous processing via message broker (RabbitMQ)
+- Direct database logging for security auditing and monitoring
 - Configurable via admin interface
 - Support for multiple languages (currently English and Brazilian Portuguese)
 - CLI commands for JWT token generation and validation
@@ -25,7 +25,6 @@ TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless use
 
 - Magento 2.4.6 or higher
 - PHP 8.1 or higher
-- RabbitMQ server (for asynchronous processing)
 
 ## Installation
 
@@ -44,23 +43,7 @@ TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless use
 
 ## Configuration
 
-### Step 1: Set up RabbitMQ (Message Queue)
-
-1. Install RabbitMQ on your server if not already installed
-2. Configure RabbitMQ in your `app/etc/env.php`:
-   ```php
-   'queue' => [
-       'amqp' => [
-           'host' => 'rabbitmq',     // Change to your RabbitMQ host
-           'port' => '5672',         // Default RabbitMQ port
-           'user' => 'guest',        // RabbitMQ username
-           'password' => 'guest',    // RabbitMQ password
-           'virtualhost' => '/'      // RabbitMQ virtual host
-       ]
-   ],
-   ```
-
-### Step 2: Enable and Configure the Module
+### Enable and Configure the Module
 
 1. In Magento admin, navigate to **Stores > Configuration > JWT Cross-Domain Auth**
 2. Under **General Settings**:
@@ -73,16 +56,15 @@ TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless use
 
 > **Important**: The JWT Secret Key must be exactly the same on all connected domains.
 
-### Step 3: Configure Multiple Domains
+### Configure Multiple Domains
 
 1. Repeat the configuration on each Magento installation that will participate in the cross-domain authentication
 2. Make sure each installation has:
    - The module installed and enabled
    - The same JWT Secret Key configured
    - The correct Target Domain configured (pointing to the other domain)
-   - RabbitMQ properly configured
 
-### Step 4: Clear Cache on All Systems
+### Clear Cache on All Systems
 
 After configuration on all domains, clear the cache on each system:
 ```bash
@@ -159,8 +141,7 @@ The command outputs the complete token, detailed payload information, and expira
 
 - Verify the JWT Secret Key is identical on both domains
 - Check both domains have the module installed and enabled
-- Ensure RabbitMQ is running and properly configured
-- Check Magento logs for errors: `var/log/system.log` and `var/log/exception.log`
+- Check application logs for errors: `var/log/system.log` and `var/log/exception.log`
 
 ### JavaScript Not Loading
 
@@ -200,6 +181,16 @@ And change this line:
 ```php
 $expirationTime = $currentTime + 300; // Token valid for 5 minutes
 ```
+
+## TODO
+
+### Event Logging Enhancement
+- Add additional logging fields for better debugging
+- Implement log rotation and archival
+- Add monitoring and alerting capabilities
+- Create admin interface for log viewing
+- Implement log export functionality
+- Add filtering and search capabilities for logs
 
 ## Support
 

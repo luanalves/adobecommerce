@@ -7,7 +7,7 @@
  * para identificação de autoria, copyright e licenciamento.
  */
 
-# ADR-002: Authentication Event Logging with RabbitMQ
+# ADR-002: Authentication Event Logging
 
 ## Status
 Accepted
@@ -24,8 +24,6 @@ Following our implementation of JWT-based cross-domain authentication (see ADR-0
 4. Support troubleshooting of authentication issues across domains
 5. Create alerts for suspicious authentication patterns
 
-Since our system already uses RabbitMQ for asynchronous processing of authentication events, we need to define a standardized approach for logging these events.
-
 ## Decision Drivers
 * Security and audit requirements
 * Performance impact on authentication process
@@ -37,11 +35,10 @@ Since our system already uses RabbitMQ for asynchronous processing of authentica
 1. **Direct database logging**: Log all authentication events directly to the database from each domain.
 2. **File-based logging**: Write authentication events to log files on each domain.
 3. **Third-party logging service**: Integrate with an external logging service like Splunk or ELK stack.
-4. **RabbitMQ centralized logging**: Use our existing RabbitMQ integration to centralize authentication events.
-5. **Hybrid approach**: Use RabbitMQ for immediate events and batch processing for detailed logs.
+4. **Hybrid approach**: Combine immediate file logging with periodic database aggregation.
 
 ## Decision
-We will implement **Option 4: RabbitMQ centralized logging** for authentication events.
+We will implement **Option 1: Direct database logging** for authentication events.
 
 ### Documentation and Coding Standards
 All implementation will adhere to the following PHP Standards Recommendations:
@@ -55,16 +52,16 @@ These standards ensure code maintainability, readability, and proper documentati
 ### Authentication Logging Flow
 The authentication logging flow will work as follows:
 
-1. When a cross-domain authentication event occurs (token generation or validation), minimal information is logged locally for immediate diagnostics.
-2. A detailed authentication event message is published to a dedicated RabbitMQ exchange `crossdomain.auth.events`.
-3. Multiple specialized consumers process these events:
-   - A logging consumer writes events to a centralized database for audit and reporting
-   - A monitoring consumer analyzes patterns for security alerts
-   - An analytics consumer aggregates statistics for dashboards
+1. When a cross-domain authentication event occurs (token generation or validation), the event details are immediately logged to the database.
+2. A background cleanup process manages log retention according to defined policies.
+3. Periodic analysis jobs process the logs for:
+   - Security monitoring and alerting
+   - Usage analytics and reporting
+   - Audit compliance checks
 
 ### Event Structure
-All authentication events will follow this standardized JSON format:
-```json
+All authentication events will follow this standardized format in the database:
+```
 {
   "event_id": "uuid-v4-identifier",
   "event_type": "auth.token.generated | auth.token.validated | auth.token.rejected",
@@ -90,8 +87,7 @@ All authentication events will follow this standardized JSON format:
 ```
 
 ### Retention Policy
-- Real-time events: 7 days in RabbitMQ (with TTL)
-- Processed events: 90 days in detailed form
+- Detailed events: 90 days
 - Aggregated statistics: 2 years
 - Security incidents: 7 years (with appropriate anonymization)
 
@@ -100,28 +96,29 @@ All authentication events will follow this standardized JSON format:
 - IP addresses will be partially anonymized
 - Log access will be restricted and audited
 - Sensitive fields will be encrypted at rest
+- Database partitioning for improved query performance
 
 ## Consequences
 
 ### Advantages
-- Decoupled logging doesn't impact authentication performance
-- Centralized visibility across all domains
-- Flexible processing for different use cases (security, analytics, auditing)
-- Scalable architecture for high traffic volumes
+- Direct logging provides immediate visibility
+- Simple architecture with fewer moving parts
+- Built-in Magento database reliability
+- Easy integration with existing backup procedures
 - Consistent event format facilitates analysis
 
 ### Disadvantages
-- Increased complexity in the logging system
-- Dependency on RabbitMQ availability
-- Need for additional consumers and processors
-- Requires monitoring of the message queue itself
+- Potential performance impact during high traffic
+- Additional database storage requirements
+- Need for regular maintenance and cleanup
+- Database backup size increase
 
 ### Risks and Mitigations
-- **Risk**: Message queue overload during traffic spikes
-  **Mitigation**: Implement throttling and circuit breakers
+- **Risk**: Database performance impact during traffic spikes
+  **Mitigation**: Implement efficient indexing and partitioning
 
-- **Risk**: Loss of events if consumers fail
-  **Mitigation**: Dead-letter queues, retry policies, and monitoring
+- **Risk**: Storage growth
+  **Mitigation**: Regular cleanup jobs and data archiving
 
 - **Risk**: Privacy compliance issues
   **Mitigation**: Data minimization, anonymization, and retention policies
@@ -133,7 +130,6 @@ All authentication events will follow this standardized JSON format:
 
 ## References
 - [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
-- [RabbitMQ Best Practices](https://www.cloudamqp.com/blog/part1-rabbitmq-best-practice.html)
 - [GDPR Compliance for Log Data](https://www.privacypolicies.com/blog/gdpr-compliance-log-files/)
 - [PSR-5: PHPDoc Standard (Draft)](https://github.com/php-fig/fig-standards/blob/master/proposed/phpdoc.md)
 - [PSR-3: Logger Interface](https://www.php-fig.org/psr/psr-3/)

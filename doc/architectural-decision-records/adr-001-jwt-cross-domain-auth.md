@@ -23,10 +23,9 @@ We need a secure and efficient way for a customer logged into one domain to seam
 2. **OAuth 2.0 with an external identity provider**: Implement a third-party SSO solution.
 3. **Cross-domain cookies**: Attempt to share cookies across domains.
 4. **JWT token-based authentication with direct redirect**: Generate and pass JWT tokens between domains for authentication.
-5. **JWT token-based authentication with message broker**: Generate JWT tokens and use a message broker for asynchronous processing of authentication events.
 
 ## Decision
-We will implement option 5: **JWT token-based authentication with message broker integration**.
+We will implement option 4: **JWT token-based authentication with direct redirect**.
 
 Authentication flow:
 1. User logs into Domain A
@@ -34,7 +33,7 @@ Authentication flow:
 3. Domain A generates a JWT token containing minimal user information
 4. User is redirected to Domain B with the token
 5. Domain B validates the token and automatically logs in the user
-6. Authentication details are logged asynchronously via RabbitMQ
+6. Authentication details are logged for security tracking
 
 ## Technical Implementation Details
 
@@ -63,11 +62,6 @@ Authentication flow:
 - Only basic customer information in token payload
 - Display of Magento loader during redirection to prevent user from intercepting the process
 
-### Message Queue Integration
-- Authentication events are published to `crossdomain.auth.login` queue
-- Asynchronous processing reduces impact on frontend performance
-- Detailed logging for security audit purposes
-
 ## Consequences
 
 ### Advantages
@@ -75,7 +69,6 @@ Authentication flow:
 - Minimal information transmitted between domains
 - Follows security best practices
 - Token expiration limits the attack window
-- Asynchronous processing improves performance
 - Visual feedback during authentication process
 - Integrates with Magento's native authentication system
 
@@ -83,7 +76,6 @@ Authentication flow:
 - Requires identical JWT secret on all domains
 - May require periodic secret rotation
 - Token-based approach requires proper implementation to avoid security risks
-- Adds message broker as a dependency
 
 ### Risks and Mitigations
 - **Risk**: JWT token interception
@@ -91,9 +83,6 @@ Authentication flow:
 
 - **Risk**: JWT secret compromise
   **Mitigation**: Encrypted storage, secret rotation capability
-
-- **Risk**: Message broker downtime
-  **Mitigation**: Graceful degradation, logging directly if broker unavailable
 
 ## Related Decisions
 - Choice of controller-based implementation over formal Web API (simplicity and session access)
@@ -103,4 +92,3 @@ Authentication flow:
 ## References
 - [JWT.io](https://jwt.io/introduction) - Introduction to JSON Web Tokens
 - [OWASP JWT Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html) - Security best practices
-- [Magento DevDocs: Message Queues](https://devdocs.magento.com/guides/v2.4/extension-dev-guide/message-queues/message-queues.html) - Message queue implementation in Magento

@@ -7,7 +7,7 @@
 ?>
 <script type="text/x-magento-init">
 {
-    ".cross-domain-link": {
+    "[data-role=cross-domain-container]": {
         "crossDomainSwitch": {
             "tokenUrl": "<?= $block->getUrl('jwt/token') ?>",
             "crossDomainUrl": "<?= $block->getUrl('jwt/login') ?>"

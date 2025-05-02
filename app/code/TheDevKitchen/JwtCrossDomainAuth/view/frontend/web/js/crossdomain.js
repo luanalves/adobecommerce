@@ -9,8 +9,9 @@
 
 define([
     'jquery',
-    'mage/translate'
-], function ($, $t) {
+    'mage/translate',
+    'loader'
+], function ($, $t, loader) {
     'use strict';
     
     return function (config) {
@@ -39,18 +40,8 @@ define([
                     return;
                 }
                 
-                // Create and display loading indicator
-                if (!$('.crossdomain-loading-mask').length) {
-                    $('body').append(
-                        '<div class="crossdomain-loading-mask">' +
-                        '    <div class="loader">' +
-                        '        <img src="' + require.toUrl('images/loader-1.gif') + '" alt="' + $t('Loading...') + '">' +
-                        '    </div>' +
-                        '</div>'
-                    );
-                } else {
-                    $('.crossdomain-loading-mask').show();
-                }
+                // Initialize loader on body
+                $('body').loader('show');
                 
                 // Log token request details for debugging
                 console.log('Requesting authentication token:', {
@@ -80,8 +71,8 @@ define([
                             // Perform the redirect with the token
                             window.location.href = targetUrl;
                         } else {
-                            // Handle error response
-                            $('.crossdomain-loading-mask').hide();
+                            // Hide loader on error
+                            $('body').loader('hide');
                             
                             console.error('Token generation failed:', response);
                             
@@ -94,8 +85,8 @@ define([
                         }
                     },
                     error: function (xhr, status, error) {
-                        // Hide loading indicator on error
-                        $('.crossdomain-loading-mask').hide();
+                        // Hide loader on error
+                        $('body').loader('hide');
                         
                         // Log detailed error information for debugging
                         console.error('AJAX request failed:', {

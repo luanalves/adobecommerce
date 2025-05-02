@@ -23,6 +23,7 @@ use Magento\Framework\UrlInterface;
 use TheDevKitchen\JwtCrossDomainAuth\Helper\LoggerHelper;
 use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 use TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface;
+use TheDevKitchen\JwtCrossDomainAuth\Model\Queue\AuthEventPublisher;
 
 /**
  * Controller for validating JWT tokens and authenticating customers
@@ -76,6 +77,11 @@ class Index implements HttpGetActionInterface
     private $urlBuilder;
 
     /**
+     * @var AuthEventPublisher
+     */
+    private $authEventPublisher;
+
+    /**
      * Constructor
      * 
      * @param RequestInterface $request HTTP request handler
@@ -87,6 +93,7 @@ class Index implements HttpGetActionInterface
      * @param Config $config Module configuration
      * @param LoggerHelper $loggerHelper Logger helper service
      * @param UrlInterface $urlBuilder URL generation service
+     * @param AuthEventPublisher $authEventPublisher Authentication event publisher
      */
     public function __construct(
         RequestInterface $request,
@@ -97,7 +104,8 @@ class Index implements HttpGetActionInterface
         TokenServiceInterface $tokenService,
         Config $config,
         LoggerHelper $loggerHelper,
-        UrlInterface $urlBuilder
+        UrlInterface $urlBuilder,
+        AuthEventPublisher $authEventPublisher
     ) {
         $this->request = $request;
         $this->resultRedirectFactory = $resultRedirectFactory;
@@ -108,6 +116,7 @@ class Index implements HttpGetActionInterface
         $this->config = $config;
         $this->loggerHelper = $loggerHelper;
         $this->urlBuilder = $urlBuilder;
+        $this->authEventPublisher = $authEventPublisher;
     }
 
     /**
@@ -200,6 +209,7 @@ class Index implements HttpGetActionInterface
     /**
      * Log authentication event details for security tracking
      * Records successful authentication attempts with relevant context
+     * Publishes authentication event to message queue for asynchronous processing
      *
      * @param string $customerId Customer ID that was authenticated
      * @param string $customerEmail Customer email for audit trail
@@ -208,15 +218,60 @@ class Index implements HttpGetActionInterface
      */
     private function logAuthenticationEvent(string $customerId, string $customerEmail, ?string $sourceDomain): void
     {
+        // Create event data array with security information
+        $eventData = [
+            'event_type' => 'auth.token.validated',
+            'source_domain' => $sourceDomain ?? 'unknown',
+            'target_domain' => $this->urlBuilder->getBaseUrl(),
+            'user_info' => [
+                'customer_id' => $customerId,
+                'email' => $customerEmail,
+                'is_logged_in' => true,
+                'ip_address' => $this->getAnonymizedIp()
+            ],
+            'request_metadata' => [
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+                'referer' => $_SERVER['HTTP_REFERER'] ?? 'unknown'
+            ],
+            'security_metadata' => [
+                'token_id' => bin2hex(random_bytes(8)),
+                'validation_status' => 'success'
+            ]
+        ];
+
+        // Log locally for immediate visibility
         $this->loggerHelper->log(
             'Cross-domain authentication successful',
             [
                 'customer_id' => $customerId,
                 'email' => $customerEmail,
                 'timestamp' => time(),
-                'success' => true,
                 'source_domain' => $sourceDomain
             ]
         );
+
+        // Publish to queue for asynchronous processing
+        $this->authEventPublisher->publish($eventData);
+    }
+    
+    /**
+     * Get anonymized IP address for privacy compliance
+     * Masks the last octet for IPv4 or the last segment for IPv6
+     *
+     * @return string Anonymized IP address
+     */
+    private function getAnonymizedIp(): string
+    {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return preg_replace('/\d+$/', 'xxx', $ip);
+        }
+        
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return preg_replace('/:[\w\d]+$/', ':xxxx', $ip);
+        }
+        
+        return 'unknown';
     }
 }

@@ -18,8 +18,8 @@ define([
         $(function () {
             console.log('Cross-domain switcher initialized with config:', config);
             
-            // Attach click handlers to all cross-domain links
-            $('.cross-domain-link').on('click', function (e) {
+            // Use event delegation to handle clicks on cross-domain links
+            $('[data-role=cross-domain-container]').on('click', '.cross-domain-link', function (e) {
                 e.preventDefault();
                 
                 // Extract target store information from data attributes

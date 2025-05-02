@@ -1,0 +1,29 @@
+{
+    "name": "thedevkitchen/module-jwt-cross-domain-auth",
+    "description": "JWT-based cross-domain authentication for Magento 2",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Luan Silva",
+            "email": "contato@thedevkitchen.com.br"
+        }
+    ],
+    "require": {
+        "php": "~8.1.0||~8.2.0",
+        "magento/framework": "103.0.*",
+        "magento/module-customer": "103.0.*",
+        "magento/module-store": "101.1.*"
+    },
+    "suggest": {
+        "php-amqplib/php-amqplib": "For using the optional RabbitMQ queue functionality"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "TheDevKitchen\\JwtCrossDomainAuth\\": ""
+        }
+    }
+}

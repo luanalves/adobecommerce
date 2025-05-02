@@ -36,6 +36,11 @@ class Config
     private const XML_PATH_LOG_FILE = 'jwt_crossdomain_auth/logging/log_file';
 
     /**
+     * Configuration path for queue enabled status
+     */
+    private const XML_PATH_QUEUE_ENABLED = 'jwt_crossdomain_auth/queue/enabled';
+
+    /**
      * @var ScopeConfigInterface
      */
     private $scopeConfig;
@@ -122,6 +127,23 @@ class Config
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
+    }
+
+    /**
+     * Check if queue processing is enabled
+     * Verifies if asynchronous message queue processing is active
+     *
+     * @param int|string|null $storeId Store view ID to check configuration for
+     * @return bool True if queue processing is enabled, false otherwise
+     */
+    public function isQueueEnabled($storeId = null): bool
+    {
+        return $this->isEnabled($storeId) && 
+            (bool)$this->scopeConfig->isSetFlag(
+                self::XML_PATH_QUEUE_ENABLED,
+                ScopeInterface::SCOPE_STORE,
+                $storeId
+            );
     }
 
     /**

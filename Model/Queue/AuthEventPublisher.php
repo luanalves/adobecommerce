@@ -12,6 +12,7 @@ use Magento\Framework\MessageQueue\PublisherInterface;
 use TheDevKitchen\JwtCrossDomainAuth\Helper\LoggerHelper;
 use TheDevKitchen\JwtCrossDomainAuth\Api\Data\AuthEventInterface;
 use TheDevKitchen\JwtCrossDomainAuth\Api\Data\AuthEventInterfaceFactory;
+use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 
 /**
  * Publisher for JWT authentication events
@@ -38,6 +39,11 @@ class AuthEventPublisher
      * @var AuthEventInterfaceFactory
      */
     private $authEventFactory;
+    
+    /**
+     * @var Config
+     */
+    private $config;
 
     /**
      * Constructor
@@ -45,19 +51,23 @@ class AuthEventPublisher
      * @param PublisherInterface $publisher Message queue publisher
      * @param LoggerHelper $loggerHelper Logger helper service
      * @param AuthEventInterfaceFactory $authEventFactory Factory for auth events
+     * @param Config $config Module configuration
      */
     public function __construct(
         PublisherInterface $publisher,
         LoggerHelper $loggerHelper,
-        AuthEventInterfaceFactory $authEventFactory
+        AuthEventInterfaceFactory $authEventFactory,
+        Config $config
     ) {
         $this->publisher = $publisher;
         $this->loggerHelper = $loggerHelper;
         $this->authEventFactory = $authEventFactory;
+        $this->config = $config;
     }
 
     /**
      * Publish authentication event to the queue
+     * Will log directly if queue is disabled via configuration
      *
      * @param array $eventData Authentication event data
      * @return void
@@ -73,6 +83,22 @@ class AuthEventPublisher
             // Add unique event ID if not already present
             if (!isset($eventData['event_id'])) {
                 $eventData['event_id'] = bin2hex(random_bytes(16));
+            }
+
+            // Check if queue is enabled in configuration
+            if (!$this->config->isQueueEnabled()) {
+                // If queue is disabled, just log the event and return
+                $this->loggerHelper->log(
+                    'Auth event processed (queue disabled): ' . ($eventData['event_type'] ?? 'auth.event'),
+                    [
+                        'event_id' => $eventData['event_id'],
+                        'timestamp' => $eventData['timestamp'],
+                        'source_domain' => $eventData['source_domain'] ?? 'unknown',
+                        'target_domain' => $eventData['target_domain'] ?? null,
+                        'customer_id' => $eventData['user_info']['customer_id'] ?? 'unknown'
+                    ]
+                );
+                return;
             }
             
             // Create event object from data
@@ -92,7 +118,7 @@ class AuthEventPublisher
             
             // Log a simple message about the event being published
             $this->loggerHelper->log(
-                'Auth event published to queue: ' . $eventData['event_type'] ?? 'auth.event',
+                'Auth event published to queue: ' . ($eventData['event_type'] ?? 'auth.event'),
                 [
                     'event_id' => $eventData['event_id'],
                     'customer_id' => $eventData['user_info']['customer_id'] ?? 'unknown'
@@ -101,7 +127,7 @@ class AuthEventPublisher
             );
         } catch (\Exception $e) {
             $this->loggerHelper->log(
-                'Failed to publish auth event to queue: ' . $e->getMessage(),
+                'Failed to process auth event: ' . $e->getMessage(),
                 [
                     'exception' => $e->getMessage()
                 ],

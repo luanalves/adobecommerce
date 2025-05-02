@@ -2,8 +2,8 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
         <section id="jwt_crossdomain_auth" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>JWT Cross-Domain Auth</label>
-            <tab>advanced</tab>
+            <label>JWT Cross-Domain Authentication</label>
+            <tab>service</tab>
             <resource>TheDevKitchen_JwtCrossDomainAuth::config</resource>
             
             <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -11,24 +11,32 @@
                 <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enable Module</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Enable or disable cross-domain authentication functionality</comment>
+                    <comment>Enable cross-domain authentication functionality.</comment>
                 </field>
             </group>
 
-            <group id="logging" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="logging" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Logging Settings</label>
                 <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enable Logging</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Enable or disable detailed authentication logging</comment>
+                    <comment>Enable logging of authentication events.</comment>
                 </field>
                 <field id="log_file" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Log File Name</label>
-                    <validate>required-entry</validate>
+                    <comment>Name of the log file (default: jwt_auth.log).</comment>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>
-                    <comment>Name of the log file (e.g., jwt_auth.log)</comment>
+                </field>
+            </group>
+
+            <group id="queue" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Queue Settings</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Use Message Queue</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Enable asynchronous processing of authentication events using RabbitMQ. Requires RabbitMQ to be properly configured.</comment>
                 </field>
             </group>
         </section>

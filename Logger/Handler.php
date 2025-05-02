@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace TheDevKitchen\JwtCrossDomainAuth\Logger;
 
+use Magento\Framework\Filesystem\DriverInterface;
 use Magento\Framework\Logger\Handler\Base;
 use Monolog\Logger as MonologLogger;
 use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
@@ -21,14 +22,17 @@ class Handler extends Base
 
     /**
      * @param Config $config
-     * @param string $filePath
+     * @param DriverInterface $filesystem
+     * @param string|null $filePath
      */
     public function __construct(
         Config $config,
-        $filePath = null
+        DriverInterface $filesystem,
+        ?string $filePath = null
     ) {
         $this->config = $config;
-        parent::__construct($filePath);
+        parent::__construct($filesystem, $filePath);
+        $this->setFilePath($this->getFilePath());
     }
 
     /**

@@ -17,6 +17,7 @@ TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless use
 - Secure cross-domain authentication using JWT tokens
 - Visual feedback with Magento's native loader during domain transitions
 - Direct database logging for security auditing and monitoring
+- Optional asynchronous event processing with RabbitMQ
 - Configurable via admin interface
 - Support for multiple languages (currently English and Brazilian Portuguese)
 - CLI commands for JWT token generation and validation
@@ -25,6 +26,7 @@ TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless use
 
 - Magento 2.4.6 or higher
 - PHP 8.1 or higher
+- RabbitMQ (optional, for asynchronous event processing)
 
 ## Installation
 
@@ -45,14 +47,20 @@ TheDevKitchen_JwtCrossDomainAuth is a Magento 2 module that enables seamless use
 
 ### Enable and Configure the Module
 
-1. In Magento admin, navigate to **Stores > Configuration > JWT Cross-Domain Auth**
+1. In Magento admin, navigate to **Stores > Configuration > Services > JWT Cross-Domain Auth**
 2. Under **General Settings**:
    - Set "Enable Module" to "Yes"
    - Enter the target domain URL in the "Target Domain" field (e.g., `https://second-store.com`)
 3. Under **Security Settings**:
    - Enter a secure JWT Secret Key (must be identical across all connected domains)
    - Use a strong, random string of at least 32 characters
-4. Save configuration
+4. Under **Logging Settings**:
+   - Enable or disable logging as needed
+   - Configure log file name if desired
+5. Under **Queue Settings**:
+   - Set "Use Message Queue" to "Yes" to enable asynchronous processing of authentication events using RabbitMQ
+   - Set to "No" to use direct logging without RabbitMQ (simpler setup, but synchronous processing)
+6. Save configuration
 
 > **Important**: The JWT Secret Key must be exactly the same on all connected domains.
 
@@ -181,6 +189,28 @@ And change this line:
 ```php
 $expirationTime = $currentTime + 300; // Token valid for 5 minutes
 ```
+
+### Queue Configuration
+
+The module supports two modes of operation for authentication event processing:
+
+1. **Direct Mode** (Queue Disabled):
+   - Authentication events are processed and logged immediately
+   - Simpler setup with no RabbitMQ dependency
+   - Suitable for smaller installations or development environments
+
+2. **Queue Mode** (Queue Enabled):
+   - Authentication events are published to RabbitMQ for asynchronous processing
+   - Improves performance by offloading event processing
+   - Requires RabbitMQ to be configured and running
+   - Better for high-traffic production environments
+
+To run the consumer for queue processing (when queue is enabled):
+```bash
+bin/magento queue:consumers:start jwt_auth_events_consumer
+```
+
+For production environments, consider using a process manager like Supervisor to ensure the consumer runs continuously.
 
 ## TODO
 

@@ -100,4 +100,8 @@
             </argument>
         </arguments>
     </virtualType>
+    
+    <!-- Preference for AuthEventInterface implementation -->
+    <preference for="TheDevKitchen\JwtCrossDomainAuth\Api\Data\AuthEventInterface" 
+                type="TheDevKitchen\JwtCrossDomainAuth\Model\Data\AuthEvent" />
 </config>

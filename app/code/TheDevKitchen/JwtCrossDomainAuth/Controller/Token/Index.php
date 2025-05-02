@@ -13,11 +13,13 @@ namespace TheDevKitchen\JwtCrossDomainAuth\Controller\Token;
 
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Exception\LocalizedException;
 use TheDevKitchen\JwtCrossDomainAuth\Helper\LoggerHelper;
 use TheDevKitchen\JwtCrossDomainAuth\Model\Config;
 use TheDevKitchen\JwtCrossDomainAuth\Service\TokenServiceInterface;
+use TheDevKitchen\JwtCrossDomainAuth\Model\Queue\AuthEventPublisher;
 
 /**
  * Controller for generating JWT tokens
@@ -56,6 +58,18 @@ class Index implements HttpGetActionInterface
     private $loggerHelper;
 
     /**
+     * Authentication event publisher
+     * @var AuthEventPublisher
+     */
+    private $authEventPublisher;
+
+    /**
+     * Request
+     * @var RequestInterface
+     */
+    private $request;
+
+    /**
      * Constructor
      * 
      * @param JsonFactory $resultJsonFactory JSON response factory
@@ -63,19 +77,25 @@ class Index implements HttpGetActionInterface
      * @param TokenServiceInterface $tokenService JWT token service
      * @param CustomerSession $customerSession Customer session handler
      * @param LoggerHelper $loggerHelper Logger helper
+     * @param AuthEventPublisher $authEventPublisher Authentication event publisher
+     * @param RequestInterface $request HTTP request
      */
     public function __construct(
         JsonFactory $resultJsonFactory,
         Config $config,
         TokenServiceInterface $tokenService,
         CustomerSession $customerSession,
-        LoggerHelper $loggerHelper
+        LoggerHelper $loggerHelper,
+        AuthEventPublisher $authEventPublisher,
+        RequestInterface $request
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->config = $config;
         $this->tokenService = $tokenService;
         $this->customerSession = $customerSession;
         $this->loggerHelper = $loggerHelper;
+        $this->authEventPublisher = $authEventPublisher;
+        $this->request = $request;
     }
 
     /**
@@ -121,14 +141,8 @@ class Index implements HttpGetActionInterface
             // Generate token using TokenService
             $token = $this->tokenService->generateToken($payload);
 
-            // Log success (without exposing token)
-            $this->loggerHelper->log(
-                'JWT token generated for cross-domain authentication',
-                [
-                    'customer_id' => $customer->getId(),
-                    'token_id' => $payload['jti']
-                ]
-            );
+            // Track token generation via queue
+            $this->publishTokenGenerationEvent($customer->getId(), $customer->getEmail(), $payload['jti']);
 
             return $result->setData(['success' => true, 'token' => $token]);
 
@@ -142,5 +156,49 @@ class Index implements HttpGetActionInterface
                 'message' => __('An error occurred while generating the authentication token.')
             ]);
         }
+    }
+
+    /**
+     * Publish token generation event to the queue
+     *
+     * @param int $customerId Customer ID for which token was generated
+     * @param string $customerEmail Customer email for audit trail
+     * @param string $tokenId Unique token identifier
+     * @return void
+     */
+    private function publishTokenGenerationEvent($customerId, string $customerEmail, string $tokenId): void
+    {
+        $targetDomain = $this->request->getParam('target_domain', null);
+        
+        $eventData = [
+            'event_type' => 'auth.token.generated',
+            'source_domain' => $this->config->getTargetDomain(),
+            'target_domain' => $targetDomain,
+            'user_info' => [
+                'customer_id' => $customerId,
+                'email' => $customerEmail,
+                'is_logged_in' => true
+            ],
+            'request_metadata' => [
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+                'referer' => $_SERVER['HTTP_REFERER'] ?? 'unknown'
+            ],
+            'security_metadata' => [
+                'token_id' => $tokenId,
+                'token_exp' => time() + $this->config->getJwtExpiration()
+            ]
+        ];
+
+        // Log locally for immediate visibility (without exposing token)
+        $this->loggerHelper->log(
+            'JWT token generated for cross-domain authentication',
+            [
+                'customer_id' => $customerId,
+                'token_id' => $tokenId
+            ]
+        );
+
+        // Publish to queue for asynchronous processing
+        $this->authEventPublisher->publish($eventData);
     }
 }

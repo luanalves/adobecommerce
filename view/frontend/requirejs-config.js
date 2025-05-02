@@ -11,7 +11,8 @@ var config = {
     map: {
         '*': {
             // Map the crossDomainSwitch component to its implementation
-            crossDomainSwitch: 'TheDevKitchen_JwtCrossDomainAuth/js/crossdomain'
+            crossDomainSwitch: 'TheDevKitchen_JwtCrossDomainAuth/js/crossdomain',
+            loader: 'mage/loader'
         }
     }
 };
